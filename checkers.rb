@@ -1,42 +1,96 @@
 require 'colored'
+require 'debugger'
+require './human'
 
 class Piece
 
-	attr_accessor :pos, :color, :char
+	attr_accessor :pos, :color, :char, :my_board, :king
 
 	def initialize(my_board, pos, color)
 		@my_board = my_board
 		@pos = pos
 		@color = color
 		@char = assign_char
+		@king = false
 	end
 
 	def assign_char
-		self.color == :white ? "  ".white : "  ".red
+		unless self.king
+			self.color == :white ? "  ".white : "  ".red
+		else
+			self.color == :white ? " K ".bold.white : " K ".bold.red
+		end
 	end
 
 	def diffs_empty
-		if self.color == :white
+		if self.color == :white && !self.king
 			[ [-1, 1], [-1,-1] ]
-		else
+		elsif self.color == :red && !self.king
 			[ [1,1], [1,-1] ]
+		else
+			[ [-1, 1], [-1,-1], [1,1], [1,-1] ]
 		end
 	end
 
 	def diffs_take
-		if self.color == :white
-			[ [-2, 2], [-2,-2] ]
-		else
-			[ [2,2], [2,-2] ]
+		king_take = enemies_around.map do |pair|
+			pair.map! { |num| num * 2 }
 		end
+
+		if self.color == :white
+			king_take.select{ |coord| coord[0] < 0}
+		elsif self.color == :red
+			king_take.select{ |coord| coord[0] > 0}
+		else
+			king_take
+		end
+	end
+
+	def valid_moves
+		valid_jumps + valid_slides
+	end
+
+	def valid_jumps
+		test_p = self.dup
+
+		curr_jumps = test_p.diffs_take.map { |coord| test_p.add(coord) }
+		# curr_jumps.select { |coord| on_board?(coord) }
+
+		if curr_jumps.flatten.empty?
+			[]
+		else
+			next_jumpers = []
+			curr_jumps.each do |coord|
+				next_jumper = test_p.dup
+				next_jumper.pos = coord
+				next_jumpers << next_jumper
+			end
+			(curr_jumps + (next_jumpers.map { |obj| obj.valid_jumps }.flatten(1))).select { |coord| on_board?(coord) }
+		end
+	end
+
+	def valid_slides
+		temp = (diffs_empty - anyone_around)
+		temp.map { |diff| add(diff) if on_board?(add(diff)) }.compact
 	end
 
 	def enemies_around
 		spots = [ [1,1], [-1,-1], [1, -1], [-1, 1] ]
-		spots.map do |coord|
-			pot_occupant = my_board.occupant( self.add(coord) )
-			pot_occupant && pot_occupant != self.color
+		spots.select do |coord|
+			# new_coord = [ spot[0] + coord[0], spot[1] + spot[1] ]
+			my_board.occupant(self.add(coord)) && (my_board.occupant(self.add(coord)).color != self.color)
 		end
+	end
+
+	def anyone_around
+		spots = [ [1,1], [-1,-1], [1, -1], [-1, 1] ]
+		spots.select do |coord|
+			my_board.occupant(self.add(coord))
+		end
+	end
+
+	def move!(to_coord)
+		self.pos = to_coord
 	end
 
 	def add!(coord)
@@ -46,15 +100,16 @@ class Piece
 	end
 
 	def add(coord)
-		temp = self.pos
+		temp = self.pos.dup
 		temp[0] += coord[0]
 		temp[1] += coord[1]
 		temp
 	end
 
-	def valid_moves
-		(diffs_empty - enemies_around) + (diffs_take & enemies_around)
-	end		
+	def on_board?(coord)
+		coord.all? { |num| num.between?(0,7) }
+	end
+
 
 end
 
@@ -63,22 +118,24 @@ class Board
 	attr_accessor :pieces
 
 	def initialize
-		
+		init_pieces
 	end
 
 	def make_piece(board, pos, color)
 		pieces << Piece.new(board, pos, color)
 	end
 
-	def occupant(coord)
-		piece = @pieces.select { |piece| piece.pos == coord }.first
-		piece ? piece : nil
-	end
+	def occupant(coord = [-1,-1], &blk)
+		blk ||= Proc.new { |piece| piece.pos == coord }
 
-	def init_pieces
-		@pieces = []
-		starting_pieces(5,7, :white)
-		starting_pieces(0,2, :red)
+		piece_array = @pieces.select { |piece| blk.call(piece) }
+		if piece_array.empty?
+			return nil
+		elsif piece_array.count == 1
+			return piece_array.first
+		else
+			return piece_array
+		end
 	end
 
 	def print
@@ -87,6 +144,12 @@ class Board
 		formated_arrays.each do |line|
 			puts line.join("")
 		end
+	end
+
+	def init_pieces
+		@pieces = []
+		starting_pieces(5,7, :white)
+		starting_pieces(0,2, :red)
 	end
 
 	def starting_pieces(row_min, row_max, color)
@@ -115,19 +178,19 @@ class Board
 		true
 	end
 
-	def write_pieces(pict_board)
+	def write_pieces!(pict_board)
 		pieces.each do |piece|
 			y = piece.pos[0]
 			x = piece.pos[1]
 
 			pict_board[y][x] = piece.char
 		end
-		pict_board
+		# pict_board
 	end
 
 	def format
 		board =  Array.new(8) { Array.new(8) { "   " } }
-		write_pieces(board)
+		write_pieces!(board)
 		new_board = []
 		board.each_with_index do |line, line_index|
 			new_line = line.each_with_index.map do |tile, tile_index|
@@ -141,5 +204,12 @@ class Board
 		end
 		new_board
 	end
+end
 
+if $0 == __FILE__
+	b = Board.new
+	b.print
+	b.occupant([1,0]).pos = [4,7]
+	b.occupant([2,3]).pos = [4,3]
+	b.occupant([5,4]).valid_jumps
 end
