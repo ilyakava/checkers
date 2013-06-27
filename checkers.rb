@@ -37,9 +37,9 @@ class Piece
 			pair.map! { |num| num * 2 }
 		end
 
-		if self.color == :white
+		if self.color == :white && !self.king
 			king_take.select{ |coord| coord[0] < 0}
-		elsif self.color == :red
+		elsif self.color == :red && !self.king
 			king_take.select{ |coord| coord[0] > 0}
 		else
 			king_take
@@ -51,9 +51,9 @@ class Piece
 	end
 
 	def valid_jumps
-		test_p = self.dup
+		jumping_piece = self.dup
 
-		curr_jumps = test_p.diffs_take.map { |coord| test_p.add(coord) }
+		curr_jumps = jumping_piece.diffs_take.map { |coord| jumping_piece.add(coord) }
 		# curr_jumps.select { |coord| on_board?(coord) }
 
 		if curr_jumps.flatten.empty?
@@ -61,7 +61,7 @@ class Piece
 		else
 			next_jumpers = []
 			curr_jumps.each do |coord|
-				next_jumper = test_p.dup
+				next_jumper = jumping_piece.dup
 				next_jumper.pos = coord
 				next_jumpers << next_jumper
 			end

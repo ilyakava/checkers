@@ -29,8 +29,11 @@ class Game
 		red_pieces = game_board.occupant {|piece| piece.color == :red }
 		white_pieces = game_board.occupant {|piece| piece.color == :white }
 
-		puts "#{red_pieces.count} red left, #{white_pieces.count} white left"
-		red_pieces.empty? || white_pieces.empty?
+		red_moves = red_pieces.map { |piece| piece.valid_moves }.flatten
+		white_moves = white_pieces.map { |piece| piece.valid_moves }.flatten
+
+		puts "#{red_pieces.count} red left with #{red_moves.count / 2} moves, #{white_pieces.count} white left with #{white_moves.count / 2} moves"
+		red_pieces.empty? || white_pieces.empty? || red_moves.empty? || white_moves.empty?
 	end
 end
 
