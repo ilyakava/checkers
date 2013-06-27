@@ -20,6 +20,7 @@ class Game
 			players.each do |color, player|
 				game_board.print
 				player.make_move
+				game_board.promote_kings
 				return color.to_s if game_over?
 			end
 		end

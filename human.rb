@@ -37,6 +37,7 @@ class HumanPlayer
 	end
 
 	def multiple_moves(to_moves, from, okay_moves)
+		# move_num = to_moves.count / 2
 		last_to = from
 		until to_moves.empty?
 			next_to = [to_moves.shift, to_moves.shift]

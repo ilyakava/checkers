@@ -146,6 +146,15 @@ class Board
 		end
 	end
 
+	def promote_kings
+		kings1 = occupant {|piece| piece.color == :red && piece.pos[0] == 0}
+		kings2 = occupant {|piece| piece.color == :white && piece.pos[0] == 7}
+		total = []
+		total += [kings1] if kings1
+		total += [kings2] if kings2
+		total.flatten.each { |piece| piece.king = true }
+	end
+
 	def init_pieces
 		@pieces = []
 		starting_pieces(5,7, :white)
