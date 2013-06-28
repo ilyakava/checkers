@@ -22,6 +22,11 @@ class Piece
 		end
 	end
 
+
+	# You reference this array of moves several times throughout
+	# your code, it would be best to define it as a constant
+	# so that you can edit it in one place if need be, as opposed
+	# to having to change every instance individually
 	def diffs_empty
 		if self.color == :white && !self.king
 			[ [-1, 1], [-1,-1] ]
@@ -65,6 +70,15 @@ class Piece
 				next_jumper.pos = coord
 				next_jumpers << next_jumper
 			end
+
+			# A little smelly here: this line is too long. You
+			# can rewrite it by using a map do block and then
+			# chaining the .flatten method to the the end like this:
+=begin
+			(curr_jumps + next_jumpers.map do |obj|
+				obj.valid_jumps
+			end.flatten(1))).select { |coord| on_board?(coord) }
+=end
 			(curr_jumps + (next_jumpers.map { |obj| obj.valid_jumps }.flatten(1))).select { |coord| on_board?(coord) }
 		end
 	end
@@ -99,6 +113,9 @@ class Piece
 		self.pos
 	end
 
+	# REV: this can be refactored by self.dup and then calling
+	# add!(coord) on the duplicate, rather than writing the 
+	# same code twice
 	def add(coord)
 		temp = self.pos.dup
 		temp[0] += coord[0]
@@ -146,6 +163,10 @@ class Board
 		end
 	end
 
+	# REV: you have a lot of duplicated code here, consider
+	# moving some of this into another method that returns
+	# an array of all pieces needing to be kinged and then
+	# use that to drive this method's functionality
 	def promote_kings
 		kings1 = occupant {|piece| piece.color == :red && piece.pos[0] == 0}
 		kings2 = occupant {|piece| piece.color == :white && piece.pos[0] == 7}
@@ -161,6 +182,13 @@ class Board
 		starting_pieces(0,2, :red)
 	end
 
+
+	# REV: this is quite verbose. You would have a much 
+	# shorter method if you used the fact that checkers 
+	# are only placed on tiles where the line_index + 
+	# tile_index is even, rather than attempting to use a
+	# different set of remainders depending on the checkers'
+	# color
 	def starting_pieces(row_min, row_max, color)
 		
 		if color == :white

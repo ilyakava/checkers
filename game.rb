@@ -33,6 +33,13 @@ class Game
 		red_moves = red_pieces.map { |piece| piece.valid_moves }.flatten
 		white_moves = white_pieces.map { |piece| piece.valid_moves }.flatten
 
+		# REV: don't go over 80 char/line. You can avoid doing this
+		# by using the forward slash "\" sign to concatenate one 
+		# string across several lines:
+		#
+		# puts "#{red_pieces.count} red left with #{red_moves.count / 2} moves,"\
+		# " #{white_pieces.count} white left with #{white_moves.count / 2} moves"
+
 		puts "#{red_pieces.count} red left with #{red_moves.count / 2} moves, #{white_pieces.count} white left with #{white_moves.count / 2} moves"
 		red_pieces.empty? || white_pieces.empty? || red_moves.empty? || white_moves.empty?
 	end

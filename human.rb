@@ -17,6 +17,8 @@ class HumanPlayer
 			puts e.message
 			retry
 		end
+
+		# REV: can be written as: from, to = move_pair
 		from, to = move_pair[0], move_pair[1]
 
 		okay_moves = play_board.occupant(from).valid_moves
@@ -26,7 +28,7 @@ class HumanPlayer
 				multiple_moves(to, from, okay_moves)
 			rescue ArgumentError => e
 				puts e.message
-				return "False move, turn forfeited"
+				return "False move, turn forfeited" # REV: lol
 			end
 			return "successful multimove"
 		elsif play_board.occupant(from).valid_jumps.include?(to)
